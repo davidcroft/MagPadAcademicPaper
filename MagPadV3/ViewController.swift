@@ -12,6 +12,8 @@ import CoreMotion
 class ViewController: UIViewController, F53OSCClientDelegate, F53OSCPacketDestination {
 
     @IBOutlet var webView: UIWebView!
+    @IBOutlet var locLabel: UILabel!
+    @IBOutlet var loadingIndicator: UIActivityIndicatorView!
     
     // OSC
     var oscClient:F53OSCClient = F53OSCClient()
@@ -28,8 +30,8 @@ class ViewController: UIViewController, F53OSCClientDelegate, F53OSCPacketDestin
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        //let url = NSURL (string: "http://dingxu.net/doc/resume.pdf");
-        let requestObj = NSURLRequest(URL: getURLFromParse(1));
+        let url = NSURL (string: "www.google.com");
+        let requestObj = NSURLRequest(URL: url!);
         webView.loadRequest(requestObj);
     }
     
@@ -68,6 +70,9 @@ class ViewController: UIViewController, F53OSCClientDelegate, F53OSCPacketDestin
         self.oscServer.delegate = self
         self.oscServer.port = recvPort
         self.oscServer.startListening()
+        
+        // label init
+        self.locLabel.text = "Current Location: 0"
     }
 
     override func didReceiveMemoryWarning() {
@@ -96,9 +101,23 @@ class ViewController: UIViewController, F53OSCClientDelegate, F53OSCPacketDestin
     
     // OSC
     func takeMessage(message: F53OSCMessage) -> Void {
-        println("message pattern: \(message.addressPattern)")
-        println("message pattern: \(message.arguments.description)")
-        // display
+        // create a new thread to get URL from parse and set webview
+        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), { () -> Void in
+            var location:Float = message.arguments.first as Float
+
+            dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                self.locLabel.text = "Current Location: \(location)"
+            })
+            
+            println("new location: \(location)");
+            
+            // display pdf
+            let requestObj = NSURLRequest(URL: self.getURLFromParse(self.mappingFromLocation(location)));
+            self.startLoadingIndicator()
+            self.webView.loadRequest(requestObj);
+            self.stopLoadingIndicator()
+            //println("reset webview request")
+        })
     }
     
     func sendOSCData() -> Void {
@@ -128,6 +147,53 @@ class ViewController: UIViewController, F53OSCClientDelegate, F53OSCPacketDestin
             //let recordData: NSData = NSData(contentsOfURL: recordURL)!
         }
         return pdfFileURL
+    }
+    
+    
+    // get mapping result from location
+    func mappingFromLocation(location:Float) -> Int {
+        if (location < 4 && location > 0) {
+            return 10;
+        } else if (location < 6 && location >= 4) {
+            return 11;
+        } else if (location < 7.3 && location >= 6) {
+            return 12;
+        } else if (location < 8.8 && location >= 7.3) {
+            return 13;
+        } else if (location < 9.8 && location >= 8.8) {
+            return 14;
+        } else if (location < 11 && location >= 9.8) {
+            return 15;
+        } else if (location < 12 && location >= 11) {
+            return 16;
+        } else if (location < 14 && location >= 12) {
+            return 17;
+        } else if (location < 15.8 && location >= 14) {
+            return 18;
+        } else if (location < 16.8 && location >= 15.8) {
+            return 19;
+        } else if (location < 17.6 && location >= 16.8) {
+            return 20;
+        } else if (location >= 17.6) {
+            return 21;
+        }
+        return 0;
+    }
+    
+    func startLoadingIndicator() {
+        // start loading indicator
+        dispatch_async(dispatch_get_main_queue(), { () -> Void in
+            self.loadingIndicator.hidden = false
+            self.loadingIndicator.startAnimating()
+        })
+    }
+    
+    func stopLoadingIndicator() {
+        // hide loading indicator
+        dispatch_async(dispatch_get_main_queue(), { () -> Void in
+            self.loadingIndicator.stopAnimating()
+            self.loadingIndicator.hidden = true
+        })
     }
 
 

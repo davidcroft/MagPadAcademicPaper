@@ -88,13 +88,13 @@ class DualArrayBuffer: NSObject {
             for i in 0...self.bufferSize-1 {
                 str += "\(self.data1X[i]) \(self.data1Y[i]) \(self.data1Z[i]) "
             }
-            println("generate string from buffer 1 for OSC")
+            //println("generate string from buffer 1 for OSC")
         } else {
             // buffer 1 is being used now and buffer 2 is buffered for OSC
             for i in 0...self.bufferSize-1 {
                 str += "\(self.data2X[i]) \(self.data2Y[i]) \(self.data2Z[i]) "
             }
-            println("generate string from buffer 2 for OSC")
+            //println("generate string from buffer 2 for OSC")
         }
         return str
     }
