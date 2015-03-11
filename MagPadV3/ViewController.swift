@@ -18,8 +18,10 @@ class ViewController: UIViewController, F53OSCClientDelegate, F53OSCPacketDestin
     // OSC
     var oscClient:F53OSCClient = F53OSCClient()
     var oscServer:F53OSCServer = F53OSCServer()
+    
     // Buffer
     var magBuf:DualArrayBuffer = DualArrayBuffer(bufSize: BUFFERSIZE)
+    
     // megnetometer
     var motionManager: CMMotionManager = CMMotionManager()
     var magnetoTimer: NSTimer!
@@ -51,8 +53,7 @@ class ViewController: UIViewController, F53OSCClientDelegate, F53OSCPacketDestin
         })
         ipAddrAlert.addAction(cancelAction)
         ipAddrAlert.addAction(doneAction)
-        ipAddrAlert.addTextFieldWithConfigurationHandler {
-            (textField) -> Void in
+        ipAddrAlert.addTextFieldWithConfigurationHandler { (textField) -> Void in
             textField.placeholder = "type in IP address here"
         }
         self.presentViewController(ipAddrAlert, animated: true, completion: nil)
@@ -113,9 +114,7 @@ class ViewController: UIViewController, F53OSCClientDelegate, F53OSCPacketDestin
             
             // display pdf
             let requestObj = NSURLRequest(URL: self.getURLFromParse(self.mappingFromLocation(location)));
-            self.startLoadingIndicator()
             self.webView.loadRequest(requestObj);
-            self.stopLoadingIndicator()
             //println("reset webview request")
         })
     }
@@ -127,6 +126,7 @@ class ViewController: UIViewController, F53OSCClientDelegate, F53OSCPacketDestin
             var str:String = self.magBuf.generateStringForOSC()
             let message:F53OSCMessage = F53OSCMessage(string: "/magneto \(str)")
             self.oscClient.sendPacket(message, toHost: sendHost, onPort: sendPort)
+            //println("send OSC message")
         })
     }
     
@@ -150,6 +150,7 @@ class ViewController: UIViewController, F53OSCClientDelegate, F53OSCPacketDestin
     }
     
     
+    ////// NEED MODIFICATION //////
     // get mapping result from location
     func mappingFromLocation(location:Float) -> Int {
         if (location < 4 && location > 0) {

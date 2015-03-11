@@ -10,32 +10,25 @@ import UIKit
 
 class DualArrayBuffer: NSObject {
     
-    // buffer data
-    var data1X: Array<CGFloat>
-    var data1Y: Array<CGFloat>
-    var data1Z: Array<CGFloat>
-    
-    var data2X: Array<CGFloat>
-    var data2Y: Array<CGFloat>
-    var data2Z: Array<CGFloat>
+    // buffer data: dual buffer
+    var data: Array<CGFloat>
     
     var dataIndex: Int
     var bufferIndex: Bool   // false for buffer 1 and true for buffer 2
-    let bufferSize: Int
+    let bufferSize: Int     // max capacity for each axis
+    let bufferOffset: Int   // offset from buffer 1 to buffer 2
     
     init(bufSize:Int) {
         // init the size of buffer
-        data1X = Array<CGFloat>(count: bufSize, repeatedValue:0)
-        data1Y = Array<CGFloat>(count: bufSize, repeatedValue:0)
-        data1Z = Array<CGFloat>(count: bufSize, repeatedValue:0)
+        data = Array<CGFloat>(count: bufSize*3*2, repeatedValue:0)
         
-        data2X = Array<CGFloat>(count: bufSize, repeatedValue:0)
-        data2Y = Array<CGFloat>(count: bufSize, repeatedValue:0)
-        data2Z = Array<CGFloat>(count: bufSize, repeatedValue:0)
-        
+        // init buffersize and bufferOffset
         bufferSize = bufSize
+        bufferOffset = bufSize*3
+        
         // data index in buffer
         dataIndex = 0
+        
         // false for buffer 1 and true for buffer 2
         bufferIndex = false
         
@@ -49,53 +42,44 @@ class DualArrayBuffer: NSObject {
         
         // storage data
         if (self.dataIndex < self.bufferSize) {
-            // not comes to end of a buffer
-            if (!self.bufferIndex) {
-                // store in buffer 1
-                self.data1X[self.dataIndex] = CGFloat(valX)
-                self.data1Y[self.dataIndex] = CGFloat(valY)
-                self.data1Z[self.dataIndex] = CGFloat(valZ)
-                self.dataIndex++
-            } else {
-                // store in buffer 2
-                self.data2X[self.dataIndex] = CGFloat(valX)
-                self.data2Y[self.dataIndex] = CGFloat(valY)
-                self.data2Z[self.dataIndex] = CGFloat(valZ)
-                self.dataIndex++
-            }
-            result = false
+            
+            // store into buffer
+            var idx = self.dataIndex*3 + (self.bufferIndex ? self.bufferOffset : 0)
+            self.data[idx] = CGFloat(valX)
+            self.data[idx+1] = CGFloat(valY)
+            self.data[idx+2] = CGFloat(valZ)
+            
+            // update dataIndex
+            self.dataIndex++
+            
+            //result = false
         }
         
         // check if buffer is full
         if (self.dataIndex >= self.bufferSize) {
             // update buffer inner index
             self.dataIndex = 0
-            
             // change buffer index
             self.bufferIndex = !self.bufferIndex
-            
             // update result
             result = true
         }
+        
         return result
     }
     
     func generateStringForOSC() -> String {
         // check which buffer is being used now and the other is the buffered one for OSC
         var str:String = ""
-        if (self.bufferIndex) {
-            // buffer 2 is being used now and buffer 1 is buffered for OSC
-            for i in 0...self.bufferSize-1 {
-                str += "\(self.data1X[i]) \(self.data1Y[i]) \(self.data1Z[i]) "
-            }
-            //println("generate string from buffer 1 for OSC")
-        } else {
-            // buffer 1 is being used now and buffer 2 is buffered for OSC
-            for i in 0...self.bufferSize-1 {
-                str += "\(self.data2X[i]) \(self.data2Y[i]) \(self.data2Z[i]) "
-            }
-            //println("generate string from buffer 2 for OSC")
+        
+        // self.bufferIndex == true:  buffer 2 is being used now and buffer 1 is ready for OSC
+        // self.bufferIndex == false: buffer 1 is being used now and buffer 2 is ready for OSC
+        var idx:Int = (self.bufferIndex ? 0 : self.bufferOffset)
+        
+        for i in 0...self.bufferSize-1 {
+            str += "\(self.data[idx++]) \(self.data[idx++]) \(self.data[idx++]) "
         }
+        
         return str
     }
     
